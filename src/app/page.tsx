@@ -16,6 +16,7 @@ import {
   deleteDeck,
   getTotalCardsCount,
   getTodayPracticeCount,
+  initializeWithDefaultData,
 } from '@/lib/db';
 import type { Deck } from '@/lib/types';
 import { useI18n } from '@/components/I18nProvider';
@@ -33,6 +34,9 @@ export default function DecksPage() {
   const [editingDeck, setEditingDeck] = useState<Deck | null>(null);
 
   const loadData = useCallback(async () => {
+    // Initialize with default data on first run
+    await initializeWithDefaultData();
+    
     const allDecks = await getAllDecks();
     setDecks(allDecks);
 

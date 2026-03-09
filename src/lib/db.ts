@@ -1,5 +1,6 @@
 import Dexie, { type Table } from 'dexie';
 import type { Deck, Card } from './types';
+import { defaultDeck, defaultCards } from './seedData';
 
 class CapairDatabase extends Dexie {
   decks!: Table<Deck, string>;
@@ -16,6 +17,40 @@ class CapairDatabase extends Dexie {
 }
 
 export const db = new CapairDatabase();
+
+// Check if app has been initialized
+export async function hasBeenInitialized(): Promise<boolean> {
+  const decks = await db.decks.toArray();
+  return decks.length > 0;
+}
+
+// Initialize with default data
+export async function initializeWithDefaultData(): Promise<void> {
+  const alreadyInitialized = await hasBeenInitialized();
+  if (alreadyInitialized) {
+    return;
+  }
+
+  await db.transaction('rw', db.decks, db.cards, async () => {
+    // Add default deck
+    await db.decks.add(defaultDeck);
+
+    // Add default cards
+    for (const cardData of defaultCards) {
+      await db.cards.add({
+        id: crypto.randomUUID(),
+        deckId: defaultDeck.id,
+        sentence: cardData.sentence,
+        highlightedWord: cardData.highlightedWord,
+        translation: cardData.translation,
+        createdAt: new Date(),
+        correctCount: 0,
+        incorrectCount: 0,
+        lastPracticedAt: null,
+      });
+    }
+  });
+}
 
 // Deck operations
 export async function createDeck(name: string): Promise<Deck> {
