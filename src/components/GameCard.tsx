@@ -23,6 +23,7 @@ export function GameCard({ card, currentNumber, totalCards, onAnswer, onSkip }: 
   const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
   const [attempts, setAttempts] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
+  const [showHint, setShowHint] = useState(false);
 
   const normalizeText = (text: string) => {
     return text.toLowerCase().trim().replace(/[.,!?;:'"()]/g, '');
@@ -111,24 +112,47 @@ export function GameCard({ card, currentNumber, totalCards, onAnswer, onSkip }: 
             {t('translateHighlighted')}
           </p>
 
-          <div className={cn(
-            'transition-all duration-150',
-            feedback === 'incorrect' && 'shake'
-          )}>
-            <Input
-              value={answer}
-              onChange={(e) => setAnswer(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={t('typeTranslation')}
-              disabled={showAnswer}
-              className={cn(
-                'text-center text-lg',
-                feedback === 'correct' && 'border-sage bg-sage/5',
-                feedback === 'incorrect' && 'border-warm-red bg-warm-red/5'
-              )}
-              autoFocus
-            />
+          <div className="flex gap-2">
+            <div className={cn(
+              'flex-1 transition-all duration-150',
+              feedback === 'incorrect' && 'shake'
+            )}>
+              <Input
+                value={answer}
+                onChange={(e) => setAnswer(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={t('typeTranslation')}
+                disabled={showAnswer}
+                className={cn(
+                  'text-center text-lg',
+                  feedback === 'correct' && 'border-sage bg-sage/5',
+                  feedback === 'incorrect' && 'border-warm-red bg-warm-red/5'
+                )}
+                autoFocus
+              />
+            </div>
+            <Button
+              variant="ghost"
+              type="button"
+              onClick={() => setShowHint(true)}
+              disabled={showAnswer || showHint}
+              className="flex-shrink-0 px-3"
+            >
+              👁️
+            </Button>
           </div>
+
+          {/* Show Hint */}
+          {showHint && !showAnswer && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-amber-50 border border-soft-amber rounded-xl p-3 text-center"
+            >
+              <p className="text-sm text-stone mb-1">Правильный ответ:</p>
+              <p className="text-lg font-medium text-warm-navy">{card.translation}</p>
+            </motion.div>
+          )}
 
           {/* Feedback */}
           <AnimatePresence>
@@ -177,9 +201,32 @@ export function GameCard({ card, currentNumber, totalCards, onAnswer, onSkip }: 
                 </Button>
               </motion.div>
             )}
+
+            {showHint && !showAnswer && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-3"
+              >
+                <div className="bg-amber-50 border border-soft-amber rounded-xl p-4 text-center">
+                  <p className="text-sm text-stone mb-1">{t('correctAnswer')}</p>
+                  <p className="text-xl font-medium text-warm-navy">{card.translation}</p>
+                </div>
+                <Button
+                  variant="primary"
+                  className="w-full"
+                  onClick={() => {
+                    onAnswer(false);
+                    setShowHint(false);
+                  }}
+                >
+                  {t('next')}
+                </Button>
+              </motion.div>
+            )}
           </AnimatePresence>
 
-          {!showAnswer && (
+          {!showAnswer && !showHint && (
             <Button
               variant="primary"
               className="w-full"
