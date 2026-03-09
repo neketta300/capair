@@ -6,6 +6,7 @@ import { BookOpen, Trash2, Edit2 } from 'lucide-react';
 import type { Deck } from '@/lib/types';
 import { Button } from './ui/Button';
 import { ProgressBar } from './ui/ProgressBar';
+import { useI18n } from './I18nProvider';
 import { cn } from '@/lib/utils';
 
 interface DeckCardProps {
@@ -25,6 +26,7 @@ export function DeckCard({
   onEdit,
   onDelete,
 }: DeckCardProps) {
+  const { t } = useI18n();
   const router = useRouter();
   const masteryPercentage = cardsCount > 0 ? (masteredCount / cardsCount) * 100 : 0;
 
@@ -48,7 +50,7 @@ export function DeckCard({
             {deck.name}
           </h3>
           <p className="text-sm text-stone mt-0.5">
-            {cardsCount} {cardsCount === 1 ? 'card' : 'cards'}
+            {cardsCount} {cardsCount === 1 ? t('card') : t('cards')}
           </p>
         </div>
         
@@ -91,7 +93,7 @@ export function DeckCard({
 
       {cardsCount > 0 && (
         <p className="text-xs text-stone mt-2 text-right">
-          {Math.round(masteryPercentage)}% mastery
+          {Math.round(masteryPercentage)}% {t('mastery')}
         </p>
       )}
     </motion.div>
