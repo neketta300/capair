@@ -128,6 +128,9 @@ export function AddCardModal({ isOpen, onClose, onSave, editingCard }: AddCardMo
             onChange={(e) => setTranslation(e.target.value)}
             placeholder="e.g., кот/коты"
           />
+          <p className="text-xs text-stone mt-1.5">
+            {t('multipleTranslationsHint')}
+          </p>
         </div>
 
         <div className="flex items-center justify-end gap-3 pt-4">

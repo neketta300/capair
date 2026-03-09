@@ -29,6 +29,21 @@ export function GameCard({ card, currentNumber, totalCards, onAnswer, onSkip }: 
     return text.toLowerCase().trim().replace(/[.,!?;:'"()]/g, '');
   };
 
+  const renderTranslation = (translation: string) => {
+    const parts = translation.split('/');
+    if (parts.length === 1) {
+      return <span className="text-warm-navy">{translation}</span>;
+    }
+    return parts.map((part, index) => (
+      <span key={index}>
+        {index > 0 && <span className="text-mist mx-2 font-medium"> / </span>}
+        <span className={index === 0 ? 'text-warm-navy font-semibold' : 'text-stone'}>
+          {part.trim()}
+        </span>
+      </span>
+    ));
+  };
+
   const checkAnswer = () => {
     const normalizedAnswer = normalizeText(answer);
     const normalizedTranslation = normalizeText(card.translation);
@@ -175,7 +190,7 @@ export function GameCard({ card, currentNumber, totalCards, onAnswer, onSkip }: 
                 className="bg-mist/50 rounded-xl p-4 text-center"
               >
                 <p className="text-sm text-stone mb-1">{t('correctAnswer')}</p>
-                <p className="text-lg font-medium text-ink">{card.translation}</p>
+                <p className="text-lg font-medium text-ink">{renderTranslation(card.translation)}</p>
                 <Button
                   variant="primary"
                   className="mt-3 w-full"
@@ -198,7 +213,7 @@ export function GameCard({ card, currentNumber, totalCards, onAnswer, onSkip }: 
               >
                 <div className="bg-amber-50 border border-soft-amber rounded-xl p-4 text-center">
                   <p className="text-sm text-stone mb-1">{t('correctAnswer')}</p>
-                  <p className="text-xl font-medium text-warm-navy">{card.translation}</p>
+                  <p className="text-xl font-medium">{renderTranslation(card.translation)}</p>
                 </div>
                 <Button
                   variant="primary"

@@ -34,6 +34,7 @@ export const translations = {
     cancel: 'Cancel',
     save: 'Save',
     saveChanges: 'Save Changes',
+    multipleTranslationsHint: 'Use / to add multiple translations',
     
     // Play page
     practice: 'Practice',
@@ -131,6 +132,7 @@ export const translations = {
     cancel: 'Отмена',
     save: 'Сохранить',
     saveChanges: 'Сохранить изменения',
+    multipleTranslationsHint: 'Используйте / для добавления нескольких переводов',
     
     // Play page
     practice: 'Практика',

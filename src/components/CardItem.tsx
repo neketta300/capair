@@ -35,6 +35,21 @@ export function CardItem({
     );
   };
 
+  const renderTranslation = (translation: string) => {
+    const parts = translation.split('/');
+    if (parts.length === 1) {
+      return translation;
+    }
+    return parts.map((part, index) => (
+      <span key={index}>
+        {index > 0 && <span className="text-mist mx-1"> / </span>}
+        <span className={index === 0 ? 'text-ink' : 'text-stone'}>
+          {part.trim()}
+        </span>
+      </span>
+    ));
+  };
+
   return (
     <motion.div
       layout
@@ -52,8 +67,8 @@ export function CardItem({
           <p className="font-card text-ink text-lg leading-relaxed">
             {highlightSentence(card.sentence, card.highlightedWord)}
           </p>
-          <p className="text-sm text-stone mt-2">
-            {card.translation}
+          <p className="text-sm mt-2">
+            {renderTranslation(card.translation)}
           </p>
           {(card.correctCount > 0 || card.incorrectCount > 0) && (
             <div className="flex items-center gap-3 mt-3 text-xs font-mono">
