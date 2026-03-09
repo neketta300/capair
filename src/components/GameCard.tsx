@@ -136,9 +136,9 @@ export function GameCard({ card, currentNumber, totalCards, onAnswer, onSkip }: 
               type="button"
               onClick={() => setShowHint(true)}
               disabled={showAnswer || showHint}
-              className="flex-shrink-0 px-3"
+              className="flex-shrink-0 px-4 text-sm font-medium"
             >
-              👁️
+              {t('hint')}
             </Button>
           </div>
 

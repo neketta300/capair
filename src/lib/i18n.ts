@@ -55,6 +55,7 @@ export const translations = {
     gotIt: 'Got it',
     check: 'Check',
     next: 'Next',
+    hint: 'Hint',
     
     // Session complete
     sessionComplete: 'Session Complete',
@@ -151,6 +152,7 @@ export const translations = {
     gotIt: 'Понятно',
     check: 'Проверить',
     next: 'Дальше',
+    hint: 'Подсказка',
     
     // Session complete
     sessionComplete: 'Сессия завершена',
