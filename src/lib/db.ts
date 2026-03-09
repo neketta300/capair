@@ -185,6 +185,35 @@ export async function exportAllData(): Promise<string> {
   return JSON.stringify(exportData, null, 2);
 }
 
+export async function exportSelectedDecks(deckIds: string[]): Promise<string> {
+  const decks = await db.decks.where('id').anyOf(deckIds).toArray();
+  const allCards = await db.cards.toArray();
+
+  const exportData = {
+    version: '1.0',
+    exportedAt: new Date().toISOString(),
+    selectedExport: true,
+    decks: decks.map((deck) => ({
+      id: deck.id,
+      name: deck.name,
+      createdAt: deck.createdAt.toISOString(),
+      cards: allCards
+        .filter((c) => c.deckId === deck.id)
+        .map((card) => ({
+          id: card.id,
+          sentence: card.sentence,
+          highlightedWord: card.highlightedWord,
+          translation: card.translation,
+          createdAt: card.createdAt.toISOString(),
+          correctCount: card.correctCount,
+          incorrectCount: card.incorrectCount,
+        })),
+    })),
+  };
+
+  return JSON.stringify(exportData, null, 2);
+}
+
 export async function importData(jsonString: string): Promise<void> {
   const data = JSON.parse(jsonString);
   

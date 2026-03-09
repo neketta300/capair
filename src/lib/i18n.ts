@@ -83,6 +83,12 @@ export const translations = {
     about: 'About',
     version: 'Version',
     appDescription: 'A focused, warm, minimal vocabulary learning application. Built with Next.js, Tailwind CSS, and IndexedDB for offline-first experience.',
+    selectExportMode: 'Select export mode',
+    exportAllDecks: 'All decks',
+    exportAllDecksDesc: 'Export all decks and cards',
+    exportSelectedDecks: 'Selected decks',
+    exportSelectedDecksDesc: 'Choose specific decks to export',
+    export: 'Export',
     
     // Common
     capair: 'Capair',
@@ -181,6 +187,12 @@ export const translations = {
     about: 'О приложении',
     version: 'Версия',
     appDescription: 'Сфокусированное, тёплое, минималистичное приложение для изучения словарного запаса. Создано с использованием Next.js, Tailwind CSS и IndexedDB для работы офлайн.',
+    selectExportMode: 'Выберите режим экспорта',
+    exportAllDecks: 'Все колоды',
+    exportAllDecksDesc: 'Экспортировать все колоды и карты',
+    exportSelectedDecks: 'Выбранные колоды',
+    exportSelectedDecksDesc: 'Выбрать конкретные колоды для экспорта',
+    export: 'Экспортировать',
     
     // Common
     capair: 'Capair',
