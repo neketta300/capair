@@ -142,18 +142,6 @@ export function GameCard({ card, currentNumber, totalCards, onAnswer, onSkip }: 
             </Button>
           </div>
 
-          {/* Show Hint */}
-          {showHint && !showAnswer && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-amber-50 border border-soft-amber rounded-xl p-3 text-center"
-            >
-              <p className="text-sm text-stone mb-1">Правильный ответ:</p>
-              <p className="text-lg font-medium text-warm-navy">{card.translation}</p>
-            </motion.div>
-          )}
-
           {/* Feedback */}
           <AnimatePresence>
             {feedback === 'correct' && (

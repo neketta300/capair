@@ -170,12 +170,14 @@ export default function DeckDetailPage() {
         )}
 
         {/* Add Card Button (Desktop) */}
-        <div className="hidden md:flex justify-center mt-6">
-          <Button onClick={() => openAddCardModal()} size="lg">
-            <Plus className="w-5 h-5 mr-2" />
-            {t('addAnotherCard')}
-          </Button>
-        </div>
+        {cards.length > 0 && (
+          <div className="hidden md:flex justify-center mt-6">
+            <Button onClick={() => openAddCardModal()} size="lg">
+              <Plus className="w-5 h-5 mr-2" />
+              {t('addAnotherCard')}
+            </Button>
+          </div>
+        )}
       </main>
 
       {/* Add Card FAB */}
