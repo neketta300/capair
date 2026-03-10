@@ -23,7 +23,7 @@ export function AddCardModal({ isOpen, onClose, onSave, editingCard }: AddCardMo
   const [sentence, setSentence] = useState('');
   const [highlightedWord, setHighlightedWord] = useState('');
   const [translation, setTranslation] = useState('');
-  const [selectedWord, setSelectedWord] = useState<string | null>(null);
+  const [selectedWords, setSelectedWords] = useState<string[]>([]);
   const sentenceRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -31,7 +31,7 @@ export function AddCardModal({ isOpen, onClose, onSave, editingCard }: AddCardMo
       setSentence(editingCard.sentence);
       setHighlightedWord(editingCard.highlightedWord);
       setTranslation(editingCard.translation);
-      setSelectedWord(editingCard.highlightedWord);
+      setSelectedWords(editingCard.highlightedWord.split(/\s+/).filter(Boolean));
     } else {
       resetForm();
     }
@@ -41,18 +41,24 @@ export function AddCardModal({ isOpen, onClose, onSave, editingCard }: AddCardMo
     setSentence('');
     setHighlightedWord('');
     setTranslation('');
-    setSelectedWord(null);
+    setSelectedWords([]);
   };
 
   const handleWordClick = (word: string) => {
     const cleanWord = word.replace(/[.,!?;:'"()]/g, '');
-    setSelectedWord(cleanWord);
-    setHighlightedWord(cleanWord);
+    setSelectedWords((prev) => {
+      const isSelected = prev.includes(cleanWord);
+      const newWords = isSelected
+        ? prev.filter((w) => w !== cleanWord)
+        : [...prev, cleanWord];
+      setHighlightedWord(newWords.join(' '));
+      return newWords;
+    });
   };
 
   const handleSentenceChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setSentence(e.target.value);
-    setSelectedWord(null);
+    setSelectedWords([]);
     setHighlightedWord('');
   };
 
@@ -60,8 +66,8 @@ export function AddCardModal({ isOpen, onClose, onSave, editingCard }: AddCardMo
     const words = sentence.split(/(\s+)/);
     return words.map((word, index) => {
       const cleanWord = word.replace(/[.,!?;:'"()]/g, '');
-      const isSelected = selectedWord === cleanWord && cleanWord.trim() !== '';
-      
+      const isSelected = selectedWords.includes(cleanWord) && cleanWord.trim() !== '';
+
       return (
         <span
           key={index}
