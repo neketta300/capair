@@ -20,9 +20,14 @@ export function CardItem({
   onDelete,
 }: CardItemProps) {
   const highlightSentence = (sentence: string, word: string) => {
-    const parts = sentence.split(new RegExp(`(${word})`, 'gi'));
+    const wordsToHighlight = word.split(/\s+/).filter(Boolean);
+    if (wordsToHighlight.length === 0) return sentence;
+
+    const regex = new RegExp(`(${wordsToHighlight.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'gi');
+    const parts = sentence.split(regex);
+    
     return parts.map((part, index) =>
-      part.toLowerCase() === word.toLowerCase() ? (
+      wordsToHighlight.some(w => part.toLowerCase() === w.toLowerCase()) ? (
         <span
           key={index}
           className="bg-soft-amber/30 text-warm-navy px-2 py-0.5 rounded font-semibold"
