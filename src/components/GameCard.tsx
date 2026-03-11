@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, XCircle } from 'lucide-react';
 import type { Card } from '@/lib/types';
@@ -19,69 +19,172 @@ interface GameCardProps {
 
 export function GameCard({ card, currentNumber, totalCards, onAnswer, onSkip }: GameCardProps) {
   const { t } = useI18n();
-  const [answer, setAnswer] = useState('');
-  const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
-  const [attempts, setAttempts] = useState(0);
-  const [showAnswer, setShowAnswer] = useState(false);
+
+  // Парсим highlightedWord по запятым: "look up, give in" → ['look up', 'give in']
+  const items = String(card.highlightedWord || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+
+  const [answers, setAnswers] = useState<string[]>(new Array(items.length).fill(''));
+  const [lockedAnswers, setLockedAnswers] = useState<boolean[]>(new Array(items.length).fill(false));
+  const [attempts, setAttempts] = useState<number[]>(new Array(items.length).fill(0));
+  const [fieldFeedback, setFieldFeedback] = useState<('correct' | 'incorrect' | null)[]>(
+    new Array(items.length).fill(null)
+  );
   const [showHint, setShowHint] = useState(false);
+  const [showFullTranslation, setShowFullTranslation] = useState(false);
+
+  // Сбрасываем состояние при смене карточки
+  useEffect(() => {
+    setAnswers(new Array(items.length).fill(''));
+    setLockedAnswers(new Array(items.length).fill(false));
+    setAttempts(new Array(items.length).fill(0));
+    setFieldFeedback(new Array(items.length).fill(null));
+    setShowHint(false);
+    setShowFullTranslation(false);
+  }, [card.id, items.length]);
 
   const normalizeText = (text: string) => {
     return text.toLowerCase().trim().replace(/[.,!?;:'"()]/g, '');
   };
 
   const renderTranslation = (translation: string) => {
-    const parts = translation.split('/');
+    const translationStr = String(translation || '');
+    const parts = translationStr.split('/');
     if (parts.length === 1) {
-      return <span className="text-warm-navy">{translation}</span>;
+      return <span className="text-warm-navy font-semibold">{translationStr}</span>;
     }
     return parts.map((part, index) => (
       <span key={index}>
-        {index > 0 && <span className="text-mist mx-2 font-medium"> / </span>}
-        <span className={index === 0 ? 'text-warm-navy font-semibold' : 'text-stone'}>
+        {index > 0 && <span className="text-mist font-medium">/</span>}
+        <span className="text-warm-navy font-semibold">
           {part.trim()}
         </span>
       </span>
     ));
   };
 
-  const checkAnswer = () => {
-    const normalizedAnswer = normalizeText(answer);
-    const normalizedTranslation = normalizeText(card.translation);
-    
-    // Check if answer matches translation (or part of it for multiple translations)
-    const translations = normalizedTranslation.split(/[,/]/).map((t) => t.trim());
-    const isCorrect = translations.some((t) => t === normalizedAnswer || normalizedAnswer.includes(t));
+  // Получаем переводы для каждого элемента (разбиваем translation по запятой)
+  const getExpectedTranslations = () => {
+    const translationStr = String(card.translation || '');
+    return translationStr.split(',').map(t => t.trim()).filter(Boolean);
+  };
 
-    if (isCorrect) {
-      setFeedback('correct');
+  // Проверка одного поля
+  const checkFieldAnswer = (answer: string, expected: string) => {
+    const normalizedAnswer = normalizeText(answer);
+    const normalizedExpected = normalizeText(expected);
+    // Также проверяем варианты через "/" (например, "привет / здравствуй")
+    const expectedVariants = normalizedExpected.split('/').map(v => v.trim());
+    return expectedVariants.some(v => v === normalizedAnswer || normalizedAnswer.includes(v));
+  };
+
+  // Проверка всех ответов
+  const checkAllAnswersCorrect = () => {
+    const expectedTranslations = getExpectedTranslations();
+    return answers.every((answer, index) => {
+      const expected = expectedTranslations[index] || expectedTranslations[0] || '';
+      return checkFieldAnswer(answer, expected);
+    });
+  };
+
+  const checkAnswer = () => {
+    const expectedTranslations = getExpectedTranslations();
+    const newLockedAnswers = [...lockedAnswers];
+    const newFieldFeedback = [...fieldFeedback];
+    const newAttempts = [...attempts];
+    let hasIncorrect = false;
+
+    items.forEach((item, index) => {
+      if (lockedAnswers[index]) return; // Уже заблокировано
+
+      const expected = expectedTranslations[index] || expectedTranslations[0] || '';
+      const isCorrect = checkFieldAnswer(answers[index], expected);
+
+      if (isCorrect) {
+        newLockedAnswers[index] = true;
+        newFieldFeedback[index] = 'correct';
+      } else {
+        newAttempts[index] += 1;
+        newFieldFeedback[index] = 'incorrect';
+        hasIncorrect = true;
+
+        // Если 5 попыток — показываем подсказку
+        if (newAttempts[index] >= 5) {
+          setShowHint(true);
+        }
+      }
+    });
+
+    setLockedAnswers(newLockedAnswers);
+    setFieldFeedback(newFieldFeedback);
+    setAttempts(newAttempts);
+
+    // Если все поля правильные — показываем полный перевод и переходим дальше
+    const allCorrect = newLockedAnswers.every(l => l);
+    if (allCorrect) {
+      setShowFullTranslation(true);
       setTimeout(() => {
         onAnswer(true);
-      }, 1000);
+      }, 1500);
     } else {
-      setAttempts((prev) => prev + 1);
-      setFeedback('incorrect');
-      
-      if (attempts >= 2) {
-        setShowAnswer(true);
+      // Есть неправильные — очищаем только их через 500мс
+      if (hasIncorrect) {
+        setTimeout(() => {
+          const newAnswers = answers.map((answer, index) => {
+            if (!newLockedAnswers[index] && newFieldFeedback[index] === 'incorrect') {
+              return '';
+            }
+            return answer;
+          });
+          setAnswers(newAnswers);
+          setFieldFeedback(new Array(items.length).fill(null));
+        }, 500);
       }
-      
-      setTimeout(() => {
-        setFeedback(null);
-        setAnswer('');
-      }, 500);
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && answer.trim()) {
-      checkAnswer();
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, index: number) => {
+    if (e.key === 'Enter') {
+      if (showHint) {
+        // После подсказки Enter проверяет все ответы
+        if (checkAllAnswersCorrect()) {
+          onAnswer(true);
+        }
+      } else {
+        const allFilled = answers.every(a => a.trim());
+        if (allFilled) {
+          checkAnswer();
+        }
+      }
     }
+  };
+
+  const handleAnswerChange = (index: number, value: string) => {
+    const newAnswers = [...answers];
+    newAnswers[index] = value;
+    setAnswers(newAnswers);
+    // Сбрасываем feedback при изменении
+    const newFieldFeedback = [...fieldFeedback];
+    newFieldFeedback[index] = null;
+    setFieldFeedback(newFieldFeedback);
   };
 
   const highlightSentence = (sentence: string, word: string) => {
-    const parts = sentence.split(new RegExp(`(${word})`, 'gi'));
-    return parts.map((part, index) =>
-      part.toLowerCase() === word.toLowerCase() ? (
+    const sentenceStr = String(sentence || '');
+    const wordStr = String(word || '');
+    // Разбиваем по запятой на группы, затем каждую группу на слова
+    const groups = wordStr.split(',').map(g => g.trim()).filter(Boolean);
+    const words = groups.flatMap(g => g.split(/\s+/).filter(Boolean));
+    
+    // Сортируем по длине (длинные сначала) чтобы "look up" обрабатывался раньше "look"
+    const sortedWords = [...words].sort((a, b) => b.length - a.length);
+    const parts = sentenceStr.split(new RegExp(`(${sortedWords.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'gi'));
+
+    return parts.map((part, index) => {
+      const isHighlighted = sortedWords.some(w => part.toLowerCase() === w.toLowerCase());
+      return isHighlighted ? (
         <span
           key={index}
           className="bg-soft-amber/30 text-warm-navy px-2 py-0.5 rounded font-semibold"
@@ -90,9 +193,14 @@ export function GameCard({ card, currentNumber, totalCards, onAnswer, onSkip }: 
         </span>
       ) : (
         part
-      )
-    );
+      );
+    });
   };
+
+  // Проверяем, все ли поля заполнены
+  const allFieldsFilled = answers.every(a => a.trim());
+  const allFieldsLocked = lockedAnswers.every(l => l);
+  const allAnswersCorrect = checkAllAnswersCorrect();
 
   return (
     <div className="flex flex-col h-full max-w-sm mx-auto">
@@ -117,128 +225,125 @@ export function GameCard({ card, currentNumber, totalCards, onAnswer, onSkip }: 
       >
         <div className="bg-soft-white rounded-2xl border border-mist p-8 mb-6">
           <p className="font-card text-xl text-ink text-center leading-relaxed">
-            {highlightSentence(card.sentence, card.highlightedWord)}
+            {highlightSentence(card.sentence || '', card.highlightedWord || '')}
           </p>
         </div>
 
         {/* Input Area */}
         <div className="space-y-3">
           <p className="text-sm text-stone text-center">
-            {t('translateHighlighted')}
+            {items.length > 1 ? t('translateWords') : t('translateHighlighted')}
           </p>
 
-          <div className="flex gap-2">
-            <div className={cn(
-              'flex-1 transition-all duration-150',
-              feedback === 'incorrect' && 'shake'
-            )}>
-              <Input
-                value={answer}
-                onChange={(e) => setAnswer(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={t('typeTranslation')}
-                disabled={showAnswer}
+          {/* Поля ввода */}
+          <div className="space-y-2">
+            {answers.map((answer, index) => (
+              <div
+                key={index}
                 className={cn(
-                  'text-center text-lg',
-                  feedback === 'correct' && 'border-sage bg-sage/5',
-                  feedback === 'incorrect' && 'border-warm-red bg-warm-red/5'
+                  'transition-all duration-150',
+                  fieldFeedback[index] === 'incorrect' && 'shake'
                 )}
-                autoFocus
-              />
-            </div>
-            <Button
-              variant="ghost"
-              type="button"
-              onClick={() => setShowHint(true)}
-              disabled={showAnswer || showHint}
-              className="flex-shrink-0 px-4 text-sm font-medium"
-            >
-              {t('hint')}
-            </Button>
+              >
+                <Input
+                  value={answer}
+                  onChange={(e) => handleAnswerChange(index, e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(e, index)}
+                  placeholder={items.length > 1 ? `${t('typeTranslationWord')} ${index + 1}` : t('typeTranslation')}
+                  disabled={lockedAnswers[index] || showFullTranslation}
+                  className={cn(
+                    'text-center text-lg',
+                    fieldFeedback[index] === 'correct' && 'border-sage bg-sage/5',
+                    fieldFeedback[index] === 'incorrect' && 'border-warm-red bg-warm-red/5'
+                  )}
+                  autoFocus={index === 0}
+                />
+              </div>
+            ))}
           </div>
 
           {/* Feedback */}
-          <AnimatePresence>
-            {feedback === 'correct' && (
+          <AnimatePresence mode="wait">
+            {showHint && !showFullTranslation && (
               <motion.div
+                key="show-hint"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                className="flex items-center justify-center gap-2 text-sage"
+                className="bg-amber-50 border border-soft-amber rounded-xl p-4 text-center space-y-3"
               >
-                <CheckCircle2 className="w-5 h-5" />
-                <span className="font-medium">{t('correct')}</span>
-              </motion.div>
-            )}
-
-            {feedback === 'incorrect' && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="flex items-center justify-center gap-2 text-warm-red"
-              >
-                <XCircle className="w-5 h-5" />
-                <span className="font-medium">{t('tryAgain')}</span>
-              </motion.div>
-            )}
-
-            {showAnswer && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-mist/50 rounded-xl p-4 text-center"
-              >
-                <p className="text-sm text-stone mb-1">{t('correctAnswer')}</p>
-                <p className="text-lg font-medium text-ink">{renderTranslation(card.translation)}</p>
-                <Button
-                  variant="primary"
-                  className="mt-3 w-full"
-                  onClick={() => {
-                    onAnswer(false);
-                    setShowAnswer(false);
-                    setAttempts(0);
-                  }}
-                >
-                  {t('gotIt')}
-                </Button>
-              </motion.div>
-            )}
-
-            {showHint && !showAnswer && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="space-y-3"
-              >
-                <div className="bg-amber-50 border border-soft-amber rounded-xl p-4 text-center">
+                <div className="space-y-3">
                   <p className="text-sm text-stone mb-1">{t('correctAnswer')}</p>
-                  <p className="text-xl font-medium">{renderTranslation(card.translation)}</p>
+                  {items.length === 1 ? (
+                    <p className="text-xl font-medium">{renderTranslation(card.translation)}</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {getExpectedTranslations().map((translation, index) => (
+                        <div key={index} className="flex items-center justify-center gap-2">
+                          <span className="text-sm text-stone font-medium">{items[index]}:</span>
+                          <span className="text-lg font-medium">{renderTranslation(translation)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <Button
-                  variant="primary"
-                  className="w-full"
-                  onClick={() => {
-                    onAnswer(false);
-                    setShowHint(false);
-                  }}
-                >
-                  {t('next')}
-                </Button>
+                {card.fullTranslation && (
+                  <div className="bg-white rounded-lg p-3 mt-2">
+                    <p className="text-sm text-stone mb-1">{t('fullSentenceTranslation')}</p>
+                    <p className="text-base text-ink">{card.fullTranslation}</p>
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {showFullTranslation && card.fullTranslation && (
+              <motion.div
+                key="show-full-translation"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="bg-soft-white border border-mist rounded-xl p-4 text-center"
+              >
+                <p className="text-sm text-stone mb-1">{t('fullSentenceTranslation')}</p>
+                <p className="text-lg font-medium text-ink">{card.fullTranslation}</p>
               </motion.div>
             )}
           </AnimatePresence>
 
-          {!showAnswer && !showHint && (
-            <Button
-              variant="primary"
-              className="w-full"
-              onClick={checkAnswer}
-              disabled={!answer.trim() || showAnswer}
-            >
-              {t('check')}
-            </Button>
-          )}
+          {/* Кнопки */}
+          <div className="flex flex-col gap-2">
+            {!showHint && !showFullTranslation && (
+              <>
+                <Button
+                  variant="primary"
+                  className="w-full"
+                  onClick={checkAnswer}
+                  disabled={!allFieldsFilled || allFieldsLocked}
+                >
+                  {t('check')}
+                </Button>
+                <Button
+                  variant="ghost"
+                  type="button"
+                  onClick={() => setShowHint(true)}
+                  className="flex-shrink-0 px-4 text-sm font-medium"
+                >
+                  {t('hint')}
+                </Button>
+              </>
+            )}
+
+            {showHint && !showFullTranslation && (
+              <Button
+                variant="primary"
+                className="w-full"
+                onClick={() => onAnswer(true)}
+                disabled={!allFieldsFilled || !allAnswersCorrect}
+              >
+                {t('next')}
+              </Button>
+            )}
+          </div>
         </div>
       </motion.div>
     </div>

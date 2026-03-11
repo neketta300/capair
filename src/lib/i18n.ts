@@ -31,6 +31,7 @@ export const translations = {
     englishSentence: 'English Sentence',
     tapToHighlight: 'Tap on a word to highlight it',
     translation: 'Translation of highlighted word',
+    fullSentenceTranslation: 'Full sentence translation (optional)',
     cancel: 'Cancel',
     save: 'Save',
     saveChanges: 'Save Changes',
@@ -49,7 +50,9 @@ export const translations = {
     // Game session
     skip: 'Skip',
     translateHighlighted: 'Translate the highlighted word',
+    translateWords: 'Translate the highlighted words',
     typeTranslation: 'Type translation...',
+    typeTranslationWord: 'Type translation for word #',
     correct: 'Correct!',
     tryAgain: 'Try again',
     correctAnswer: 'Correct answer:',
@@ -57,7 +60,7 @@ export const translations = {
     check: 'Check',
     next: 'Next',
     hint: 'Hint',
-    
+
     // Session complete
     sessionComplete: 'Session Complete',
     reviewed: 'Reviewed',
@@ -135,6 +138,7 @@ export const translations = {
     englishSentence: 'Предложение на английском',
     tapToHighlight: 'Нажмите на слово, чтобы выделить его',
     translation: 'Перевод выделенного слова',
+    fullSentenceTranslation: 'Полный перевод предложения (необязательно)',
     cancel: 'Отмена',
     save: 'Сохранить',
     saveChanges: 'Сохранить изменения',
@@ -153,7 +157,9 @@ export const translations = {
     // Game session
     skip: 'Пропустить',
     translateHighlighted: 'Переведите выделенное слово',
+    translateWords: 'Переведите выделенные слова',
     typeTranslation: 'Введите перевод...',
+    typeTranslationWord: 'Введите перевод для слова #',
     correct: 'Правильно!',
     tryAgain: 'Попробуйте снова',
     correctAnswer: 'Правильный ответ:',
@@ -161,7 +167,7 @@ export const translations = {
     check: 'Проверить',
     next: 'Дальше',
     hint: 'Подсказка',
-    
+
     // Session complete
     sessionComplete: 'Сессия завершена',
     reviewed: 'Повторено',
@@ -186,7 +192,7 @@ export const translations = {
     addToHomeScreenIOS: 'Нажмите Share → Добавить на главный экран',
     about: 'О приложении',
     version: 'Версия',
-    appDescription: 'Сфокусированное, тёплое, минималистичное приложение для изучения словарного запаса. Создано с использованием Next.js, Tailwind CSS и IndexedDB для работы офлайн.',
+    appDescription: 'Приложение некетты300 для учебы иностранных языков',
     selectExportMode: 'Выберите режим экспорта',
     exportAllDecks: 'Все колоды',
     exportAllDecksDesc: 'Экспортировать все колоды и карты',

@@ -20,14 +20,20 @@ export function CardItem({
   onDelete,
 }: CardItemProps) {
   const highlightSentence = (sentence: string, word: string) => {
-    const wordsToHighlight = word.split(/\s+/).filter(Boolean);
+    // Разбиваем по запятой на группы, затем каждую группу на слова
+    const groups = word.split(',').map(g => g.trim()).filter(Boolean);
+    const wordsToHighlight = groups.flatMap(g => g.split(/\s+/).filter(Boolean));
+    
     if (wordsToHighlight.length === 0) return sentence;
 
-    const regex = new RegExp(`(${wordsToHighlight.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'gi');
-    const parts = sentence.split(regex);
+    // Сортируем по длине (длинные сначала) чтобы "look up" обрабатывался раньше "look"
+    const sortedWords = [...wordsToHighlight].sort((a, b) => b.length - a.length);
     
+    const regex = new RegExp(`(${sortedWords.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'gi');
+    const parts = sentence.split(regex);
+
     return parts.map((part, index) =>
-      wordsToHighlight.some(w => part.toLowerCase() === w.toLowerCase()) ? (
+      sortedWords.some(w => part.toLowerCase() === w.toLowerCase()) ? (
         <span
           key={index}
           className="bg-soft-amber/30 text-warm-navy px-2 py-0.5 rounded font-semibold"

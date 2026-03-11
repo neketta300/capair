@@ -3,11 +3,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Plus, Play, Edit2, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Play, Edit2, Trash2, Search, X } from 'lucide-react';
 import { Navigation } from '@/components/Navigation';
 import { CardItem } from '@/components/CardItem';
 import { AddCardModal } from '@/components/AddCardModal';
 import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 import {
   getDeck,
   getCardsByDeck,
@@ -31,6 +32,8 @@ export default function DeckDetailPage() {
   const [cards, setCards] = useState<Card[]>([]);
   const [isEditingName, setIsEditingName] = useState(false);
   const [deckName, setDeckName] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const { openAddCardModal, closeAddCardModal, isAddCardModalOpen, editingCard } = useUIStore();
 
   const loadData = useCallback(async () => {
@@ -50,6 +53,26 @@ export default function DeckDetailPage() {
     loadData();
   }, [loadData]);
 
+  // Debounce для поиска (300мс)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchQuery.toLowerCase());
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Фильтрация карточек
+  const filteredCards = debouncedQuery
+    ? cards.filter((card) => {
+        const sentenceMatch = card.sentence.toLowerCase().includes(debouncedQuery);
+        const translationMatch = card.translation.toLowerCase().includes(debouncedQuery);
+        const highlightedMatch = card.highlightedWord.toLowerCase().includes(debouncedQuery);
+        const fullTranslationMatch = card.fullTranslation?.toLowerCase().includes(debouncedQuery);
+        return sentenceMatch || translationMatch || highlightedMatch || fullTranslationMatch;
+      })
+    : cards;
+
   const handleUpdateName = async () => {
     if (!deckName.trim() || !deck) return;
     await updateDeck(deck.id, deckName.trim());
@@ -64,11 +87,11 @@ export default function DeckDetailPage() {
     }
   };
 
-  const handleSaveCard = async (cardData: { sentence: string; highlightedWord: string; translation: string }) => {
+  const handleSaveCard = async (cardData: { sentence: string; highlightedWord: string; translation: string; fullTranslation?: string }) => {
     if (editingCard) {
       await updateCard(editingCard.id, cardData);
     } else {
-      await createCard(deckId, cardData.sentence, cardData.highlightedWord, cardData.translation);
+      await createCard(deckId, cardData.sentence, cardData.highlightedWord, cardData.translation, cardData.fullTranslation);
     }
     loadData();
   };
@@ -147,26 +170,67 @@ export default function DeckDetailPage() {
             </Button>
           </motion.div>
         ) : (
-          <div className="space-y-3">
-            <AnimatePresence>
-              {cards.map((card, index) => (
-                <motion.div
-                  key={card.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="stagger-item"
-                >
-                  <CardItem
-                    card={card}
-                    showActions
-                    onEdit={() => openAddCardModal(card)}
-                    onDelete={() => handleDeleteCard(card.id)}
-                  />
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
+          <>
+            {/* Search */}
+            <div className="mb-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-stone" />
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Поиск по карточкам..."
+                  className="pl-10 pr-10"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone hover:text-ink"
+                    type="button"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+              {debouncedQuery && (
+                <p className="text-xs text-stone mt-1.5">
+                  Найдено: {filteredCards.length} из {cards.length}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              <AnimatePresence>
+                {filteredCards.map((card, index) => (
+                  <motion.div
+                    key={card.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="stagger-item"
+                  >
+                    <CardItem
+                      card={card}
+                      showActions
+                      onEdit={() => openAddCardModal(card)}
+                      onDelete={() => handleDeleteCard(card.id)}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+
+            {filteredCards.length === 0 && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-center py-8"
+              >
+                <p className="text-stone">
+                  Ничего не найдено по запросу "{searchQuery}"
+                </p>
+              </motion.div>
+            )}
+          </>
         )}
 
         {/* Add Card Button (Desktop) */}

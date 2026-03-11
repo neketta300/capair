@@ -11,6 +11,7 @@ export interface Card {
   sentence: string;
   highlightedWord: string;
   translation: string;
+  fullTranslation?: string;
   createdAt: Date;
   correctCount: number;
   incorrectCount: number;
@@ -29,6 +30,7 @@ export interface ExportData {
       sentence: string;
       highlightedWord: string;
       translation: string;
+      fullTranslation?: string;
       createdAt: string;
       correctCount: number;
       incorrectCount: number;

@@ -87,7 +87,8 @@ export async function createCard(
   deckId: string,
   sentence: string,
   highlightedWord: string,
-  translation: string
+  translation: string,
+  fullTranslation?: string
 ): Promise<Card> {
   const card: Card = {
     id: crypto.randomUUID(),
@@ -95,6 +96,7 @@ export async function createCard(
     sentence,
     highlightedWord,
     translation,
+    fullTranslation,
     createdAt: new Date(),
     correctCount: 0,
     incorrectCount: 0,
@@ -135,8 +137,8 @@ export async function updateCardProgress(
   const card = await db.cards.get(id);
   if (card) {
     await db.cards.update(id, {
-      correctCount: isCorrect ? card.correctCount + 1 : card.correctCount,
-      incorrectCount: isCorrect ? card.incorrectCount : card.incorrectCount + 1,
+      correctCount: isCorrect ? (card.correctCount || 0) + 1 : (card.correctCount || 0),
+      incorrectCount: isCorrect ? (card.incorrectCount || 0) : (card.incorrectCount || 0) + 1,
       lastPracticedAt: new Date(),
     });
   }
@@ -175,6 +177,7 @@ export async function exportAllData(): Promise<string> {
           sentence: card.sentence,
           highlightedWord: card.highlightedWord,
           translation: card.translation,
+          fullTranslation: card.fullTranslation,
           createdAt: card.createdAt.toISOString(),
           correctCount: card.correctCount,
           incorrectCount: card.incorrectCount,
@@ -204,6 +207,7 @@ export async function exportSelectedDecks(deckIds: string[]): Promise<string> {
           sentence: card.sentence,
           highlightedWord: card.highlightedWord,
           translation: card.translation,
+          fullTranslation: card.fullTranslation,
           createdAt: card.createdAt.toISOString(),
           correctCount: card.correctCount,
           incorrectCount: card.incorrectCount,
@@ -236,6 +240,7 @@ export async function importData(jsonString: string): Promise<void> {
           sentence: card.sentence,
           highlightedWord: card.highlightedWord,
           translation: card.translation,
+          fullTranslation: card.fullTranslation,
           createdAt: new Date(card.createdAt),
           correctCount: card.correctCount,
           incorrectCount: card.incorrectCount,
